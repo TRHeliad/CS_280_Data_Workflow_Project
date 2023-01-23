@@ -27,7 +27,7 @@ def third_task_function():
 
 
 with DAG(
-    dag_id="My First CS 280 DAG",
+    dag_id="My_First_CS_280_DAG",
     schedule_interval="0 10 * * *",
     start_date=pendulum.datetime(2023, 9, 1, tz="US/Pacific"),
     catchup=False,
