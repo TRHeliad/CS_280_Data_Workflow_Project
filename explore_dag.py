@@ -1,8 +1,7 @@
 from airflow import DAG
 import logging as log
 import pendulum
-from airflow.operators.email import EmailOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 with DAG(
     dag_id="Email_DAG",
@@ -10,14 +9,8 @@ with DAG(
     start_date=pendulum.datetime(2023, 1, 20, tz="US/Pacific"),
     catchup=False,
 ) as dag:
-    start_task = DummyOperator(task_id="start_task")
-    email_task = EmailOperator(
-        task_id="email_task", 
-        to="bmadsenonpc@gmail.com",
-        subject="Someone ran your task",
-        html_content="This email is being sent from your airflow server"
+    trigger_task = TriggerDagRunOperator(
+        task_id="trigger_task",
+        trigger_dag_id="My_First_CS_280_DAG",
+        reset_dag_run=True
     )
-    end_task = DummyOperator(task_id="end_task")
-
-
-start_task >> email_task >> end_task
