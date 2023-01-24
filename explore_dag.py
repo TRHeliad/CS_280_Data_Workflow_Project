@@ -4,7 +4,7 @@ import pendulum
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 with DAG(
-    dag_id="Email_DAG",
+    dag_id="Trigger_DAG",
     schedule_interval="0 10 * * *",
     start_date=pendulum.datetime(2023, 1, 20, tz="US/Pacific"),
     catchup=False,
