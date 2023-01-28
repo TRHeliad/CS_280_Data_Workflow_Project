@@ -6,7 +6,7 @@ from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 
 def get_auth_header():
-    bearer_token = Variable.get("TWITTER_BEARER_TOKEN", deserialize_json=True)
+    bearer_token = Variable.get("TWITTER_BEARER_TOKEN")
     return {"Authorization": f"Bearer {bearer_token}"}
 
 
@@ -14,7 +14,7 @@ def dict_to_str(d):
     return str(d).encode('unicode-escape').decode('utf-8')
 
 
-def get_twitter_api_data():#ti: TaskInstance, **kwargs):
+def get_twitter_api_data(ti: TaskInstance, **kwargs):
     user_ids = Variable.get("TWITTER_USER_IDS", deserialize_json=True)
     tweet_ids = Variable.get("TWITTER_TWEET_IDS", deserialize_json=True)
 
@@ -37,7 +37,7 @@ def get_twitter_api_data():#ti: TaskInstance, **kwargs):
     ti.xcom_push("tweet_data", tweet_data)
 
 
-def log_response_data():#ti: TaskInstance, **kwargs):
+def log_response_data(ti: TaskInstance, **kwargs):
     user_data = ti.xcom_pull(key="user_data", task_ids="get_twitter_api_data_task")
     tweet_data = ti.xcom_pull(key="tweet_data", task_ids="get_twitter_api_data_task")
     logging.info(dict_to_str(user_data))
