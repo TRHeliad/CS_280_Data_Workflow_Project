@@ -1,15 +1,22 @@
 import requests, logging
 import pendulum
 import pandas as pd
+from databox import Client
 from airflow import DAG
 from airflow.models import TaskInstance
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from google.cloud import storage
+from io import StringIO
+
 
 def get_auth_header():
     bearer_token = Variable.get("TWITTER_BEARER_TOKEN")
     return {"Authorization": f"Bearer {bearer_token}"}
+
+
+def get_databox_token():
+    return Variable.get("DATABOX_TOKEN")
 
 
 def dict_to_str(d):
@@ -86,6 +93,48 @@ def transform_twitter_api_data_func(ti: TaskInstance, **kwargs):
     bucket.blob("data/tweet_data.csv").upload_from_string(tweet_df.to_csv(index=False), "text/csv")
 
 
+def update_databox():#ti: TaskInstance, **kwargs):
+    # Get current time and format
+    utc_time = pendulum.now('UTC')
+    formatted_time = utc_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Get the data from the bucket
+    client = storage.Client()
+    bucket = client.get_bucket("b-m-apache-airflow-cs280")
+
+    # Get the databox client
+    databox_client = Client(get_databox_token())
+    
+    # First we need to convert the strings we download into a buffer
+    # This is necessary since pandas.read_csv requires a path or a buffer
+    user_data_csv_buffer = StringIO(bucket.blob("data/user_data.csv").download_as_text())
+    tweet_data_csv_buffer = StringIO(bucket.blob("data/tweet_data.csv").download_as_text())
+
+    # Now we can create the dataframes
+    user_df = pd.read_csv(user_data_csv_buffer)
+    tweet_df = pd.read_csv(tweet_data_csv_buffer)
+
+    # I am going to push the metrics for Linus Tech Tips (user_id is 403614288)
+    target_user_metrics = ["followers_count", "following_count", "tweet_count", "listed_count"]
+    ## This is a series of the linus row
+    linus_row = user_df.loc[user_df['user_id']==403614288].iloc[0]
+
+    ## Push the user metrics
+    username = linus_row["username"]
+    for metric in target_user_metrics:
+        databox_client.push(f"{username}_{metric}", int(linus_row[metric]), date=formatted_time)
+
+    # I am going to use the fishing tweet from President Nelson
+    target_tweet_metrics = ["reply_count", "like_count", "impression_count", "retweet_count"]
+    ## This is a series of the tweet's row
+    tweet_row = tweet_df.loc[tweet_df['tweet_id']==1609550010969980928].iloc[0]
+
+    ## Push the tweet metrics
+    for metric in target_tweet_metrics:
+        databox_client.push(metric, int(tweet_row[metric]), date=formatted_time)
+
+update_databox()
+
 with DAG(
     dag_id="project_lab_1_etl",
     schedule_interval="0 9 * * *",
@@ -94,8 +143,7 @@ with DAG(
 ) as dag:
     get_twitter_api_data_task = PythonOperator(
         task_id="get_twitter_api_data_task",
-        python_callable=get_twitter_api_data,
-        provide_context=True
+        python_callable=get_twitter_api_data
     )
     log_response_data_task = PythonOperator(
         task_id="log_response_data_task",
@@ -103,8 +151,11 @@ with DAG(
     )
     transform_twitter_api_data_task = PythonOperator(
         task_id="transform_twitter_api_data_task",
-        python_callable=transform_twitter_api_data_func,
-        provide_context=True
+        python_callable=transform_twitter_api_data_func
+    )
+    update_databox_task = PythonOperator(
+        task_id="update_databox_task",
+        python_callable=update_databox
     )
 
-get_twitter_api_data_task >> log_response_data_task >> transform_twitter_api_data_task
+get_twitter_api_data_task >> log_response_data_task >> transform_twitter_api_data_task >> update_databox_task
