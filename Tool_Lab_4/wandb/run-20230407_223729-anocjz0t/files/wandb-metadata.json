@@ -1,0 +1,44 @@
+{
+    "os": "Windows-10-10.0.22621-SP0",
+    "python": "3.11.0",
+    "heartbeatAt": "2023-04-08T04:37:29.775228",
+    "startedAt": "2023-04-08T04:37:29.364672",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "C:\\Users\\Ben\\My Drive\\Documents\\School\\BYU Winter 2023\\CS 280\\Labs\\Tool_Lab_4\\image_classifier.py",
+    "codePath": "image_classifier.py",
+    "host": "BEN-PC",
+    "username": "Ben",
+    "executable": "C:\\Users\\Ben\\anaconda3\\envs\\cs280\\python.exe",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 3801.0,
+        "min": 0.0,
+        "max": 3801.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3801.0,
+            "min": 0.0,
+            "max": 3801.0
+        }
+    ],
+    "disk": {
+        "total": 930.7551918029785,
+        "used": 291.5076103210449
+    },
+    "gpu": "NVIDIA GeForce GTX 1080",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce GTX 1080",
+            "memory_total": 8589934592
+        }
+    ],
+    "memory": {
+        "total": 63.90550231933594
+    }
+}
